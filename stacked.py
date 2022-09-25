@@ -53,7 +53,8 @@ frame=cv.imread("images.jpg")
 
 csvyeyazildi=0
 kayityapildi=0
-
+kayityapiliyor=0
+basligiyaz=1
 
 class myApp(QtWidgets.QMainWindow):
 
@@ -144,8 +145,10 @@ class myApp(QtWidgets.QMainWindow):
 
 
     def kayit(self):
-        global frame
+        global frame,kayityapiliyor
+        kayityapiliyor=1
         try:
+            
             img2_representation,detected_face = represent(img_path = frame
             , model_name = model_name, model = model
             , enforce_detection = enforce_detection, detector_backend = detector_backend
@@ -155,7 +158,7 @@ class myApp(QtWidgets.QMainWindow):
             jsonStr = json.dumps(img2_representation)
             ad=self.ui.ogrenciad.text()
             soyad=self.ui.Ogrencisoyad.text()
-            no=self.ui.ogrencino.text()
+            no=int(self.ui.ogrencino.text())
             connection = mysql.connector.connect(host='localhost',
                                         database='deneme',
                                         user='root',
@@ -163,27 +166,30 @@ class myApp(QtWidgets.QMainWindow):
             cursor = connection.cursor()
 
 
-            mySql_insert_query = "INSERT INTO ogrenci (idogrenci, ograd, ogrsoyad, embedding) VALUES ("+no+","+"'"+ad+"', '"+soyad+"', '"+jsonStr+ "') "
-            
+            mySql_insert_query = "INSERT INTO ogrenci (idogrenci, ograd, ogrsoyad, embedding) VALUES ("+str(no)+","+"'"+ad+"', '"+soyad+"', '"+jsonStr+ "') "
+            print(mySql_insert_query)
 
 
 
-
-            cursor.execute(mySql_insert_query)
-            connection.commit()
-            print(cursor.rowcount, "Record inserted successfully into Laptop table")
-            cursor.close()
-            self.ui.kayit_tamamlandi.setText('Öğrenci Kaydı Tamamlandı')
-            loop = QEventLoop()
-            QTimer.singleShot(2000, loop.quit)
-            loop.exec_()
-            csvyeyazildi=0
-            
-            
+            try:
+                cursor.execute(mySql_insert_query)
+                connection.commit()
+                print(cursor.rowcount, "Record inserted successfully into Laptop table")
+                cursor.close()
+                self.ui.kayit_tamamlandi.setText('Öğrenci Kaydı Tamamlandı')
+                
+                loop = QEventLoop()
+                QTimer.singleShot(4000, loop.quit)
+                loop.exec_()
+                
+            except:
+                self.ui.kayit_tamamlandi.setText('Öğrenci Zaten Kayıtlı')
         except:
             print("Yuz bulunamadi ")
             self.ui.kayit_tamamlandi.setText('Öğrenci Yüzü Tespit Edilemedi')
-        self.ui.ogrenci_kaydet.disconnect()     
+        kayityapiliyor=0        
+        self.ui.ogrenci_kaydet.disconnect()
+    
     def ImageUpdateSlot2(self, Image):
         global frame
 
@@ -206,7 +212,7 @@ class Worker2(QThread):
 
     def run(self):
 
-        global Capture,model_name,model,enforce_detection,detector_backend,align,normalization,blank_foto,frame
+        global Capture,model_name,model,enforce_detection,detector_backend,align,normalization,blank_foto,frame,kayityapiliyor
 
         self.ThreadActive = True
         
@@ -218,33 +224,27 @@ class Worker2(QThread):
                                          password='1234')
 
         
-        """
-        cursor = connection.cursor()
-        mySql_insert_query = "INSERT INTO ogrenci (idogrenci, ograd, ogrsoyad, embedding) VALUES (109,'Gokhan','Evlek', '"+jsonStr+ "') "
 
-        cursor.execute(mySql_insert_query)
-        connection.commit()
-        print(cursor.rowcount, "Record inserted successfully into Laptop table")
-        cursor.close()
-        """
 
 
 
         while self.ThreadActive:
-            ret, frame = Capture.read()
-            if ret:
-        
 
-                dim = (480, 640)
+                ret, frame = Capture.read()
+                if ret:
+            
+
+                    dim = (480, 640)
 
 
-                frame_ogrenci = cv.cvtColor(frame, cv.COLOR_BGR2RGB)                
-                frame_ogrenci = cv.resize(frame_ogrenci,dim,interpolation = cv.INTER_AREA)          
-                
-                frame_ogrenci = cv.flip(frame_ogrenci, 1)
-                frame_ogrenci = QImage(frame_ogrenci.data, frame_ogrenci.shape[1], frame_ogrenci.shape[0], QImage.Format_RGB888)
-                #Pic = ConvertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
-                self.ImageUpdate2.emit(frame_ogrenci)
+                    frame_ogrenci = cv.cvtColor(frame, cv.COLOR_BGR2RGB)                
+                    frame_ogrenci = cv.resize(frame_ogrenci,dim,interpolation = cv.INTER_AREA)          
+                    
+                    frame_ogrenci = cv.flip(frame_ogrenci, 1)
+                    frame_ogrenci = QImage(frame_ogrenci.data, frame_ogrenci.shape[1], frame_ogrenci.shape[0], QImage.Format_RGB888)
+                    #Pic = ConvertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
+                    if kayityapiliyor==0:
+                        self.ImageUpdate2.emit(frame_ogrenci)
     def stop(self):
         self.ThreadActive = False
         self.quit()
@@ -264,12 +264,7 @@ class Worker1(QThread):
 
 
         """
-
         img_base = cv.imread("C:\\WhatsAppImage2022-09-1920.23.10.jpeg")
-
-
-
-
         img1_representation,detected_face_base = represent(img_path = img_base
             , model_name = model_name, model = model
             , enforce_detection = enforce_detection, detector_backend = detector_backend
@@ -278,7 +273,6 @@ class Worker1(QThread):
             )
         detected_face_base= cv.cvtColor(detected_face_base, cv.COLOR_BGR2RGB)
         
-
         print(type(img1_representation))
         jsonStr = json.dumps(img1_representation)
         print(type(jsonStr))
@@ -302,7 +296,6 @@ class Worker1(QThread):
         """
         cursor = connection.cursor()
         mySql_insert_query = "INSERT INTO ogrenci (idogrenci, ograd, ogrsoyad, embedding) VALUES (109,'Gokhan','Evlek', '"+jsonStr+ "') "
-
         cursor.execute(mySql_insert_query)
         connection.commit()
         print(cursor.rowcount, "Record inserted successfully into Laptop table")
@@ -414,10 +407,23 @@ def app():
     win.show()
     sys.exit(app.exec_())
 
-
-
 student_header = ['StudentId', 'Name', 'Surname']
-with open('students.csv', 'a') as file:
-    writer = csv.writer(file)
-    writer.writerow(student_header)
+if basligiyaz==1:
+    with open('students.csv', 'a') as file:
+        pass
+    
+with open('students.csv', 'r',newline='') as file:
+    csvreader = csv.reader(file)
+    for row_csv in csvreader:
+        print("csv den gelen: ",row_csv)
+        if len(row_csv)==0:
+            continue
+        if str(row_csv[0])==str(student_header[0]) and row_csv[1]==student_header[1] and row_csv[2]==student_header[2]:
+            basligiyaz=0
+
+if basligiyaz==1:
+    with open('students.csv', 'a') as file:
+        writer = csv.writer(file)
+        writer.writerow(student_header)
+
 app()
