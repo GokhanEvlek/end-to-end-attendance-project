@@ -159,10 +159,18 @@ class myApp(QtWidgets.QMainWindow):
             ad=self.ui.ogrenciad.text()
             soyad=self.ui.Ogrencisoyad.text()
             no=int(self.ui.ogrencino.text())
-            connection = mysql.connector.connect(host='localhost',
-                                        database='deneme',
-                                        user='root',
-                                        password='1234')
+            """
+            connection = mysql.connector.connect(host='',
+                                        port=,
+                                        database='',
+                                        user='',
+                                        password='')
+            """
+            connection = mysql.connector.connect(host='',
+                            port=,
+                            database='',
+                            user='',
+                            password='')
             cursor = connection.cursor()
 
 
@@ -217,12 +225,17 @@ class Worker2(QThread):
         self.ThreadActive = True
         
         
- 
+        connection = mysql.connector.connect(host='',
+                            port=,
+                            database='',
+                            user='',
+                            password='')
+        """
         connection = mysql.connector.connect(host='localhost',
                                          database='deneme',
                                          user='root',
                                          password='1234')
-
+        """
         
 
 
@@ -278,11 +291,18 @@ class Worker1(QThread):
         print(type(jsonStr))
         print(jsonStr)
         """
+        """
         connection = mysql.connector.connect(host='localhost',
                                          database='deneme',
                                          user='root',
                                          password='1234')
-
+        """
+        
+        connection = mysql.connector.connect(host='',
+                            port=,
+                            database='',
+                            user='',
+                            password='')
         
         sql_select_Query = "select * from ogrenci"
         cursor = connection.cursor()
